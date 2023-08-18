@@ -1,0 +1,15 @@
+{
+    "manifest_version": 3,
+    "name": "Chess Move Watcher",
+    "version": "1.0",
+    "description": "Watches moves in a chess game and sends them to a local server.",
+    "permissions": ["activeTab", "storage"],
+    "host_permissions": ["http://localhost:3000/"],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [{
+        "matches": ["*://lichess.org/*"],
+        "js": ["content.js"]
+    }]
+}
