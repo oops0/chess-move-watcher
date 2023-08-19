@@ -4,6 +4,8 @@ let lastSentPGN = "";
 
 console.log("content script loaded");
 
+
+//Add listeners
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     console.log("Message received:", message.action);
 
@@ -16,17 +18,7 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
         fetch('http://localhost:3000/flip', { method: 'POST' })
             .then(() => console.log('Sent flip command to server.'))
             .catch(error => console.error(`Error sending flip command to server: ${error}`));
-    } else if (message.command === "cleanupObservers") {
-        if (mainObserver) {
-            mainObserver.disconnect();
-            mainObserver = null;
-        }
-        if (bodyObserver) {
-            bodyObserver.disconnect();
-            bodyObserver = null;
-        }
-    }
-    // ... rest of the message listeners ...
+    } 
 });
 
 

@@ -3,7 +3,7 @@
   "name": "Lichess Observer",
   "version": "1.0",
   "description": "Extension to observe moves on Lichess and send them to a local server",
-  "permissions": ["activeTab", "webNavigation", "webRequest"],
+  "permissions": ["activeTab", "webNavigation", "webRequest","storage"],
   "host_permissions": ["http://localhost/*", "https://lichess.org/*"],
   "background": {
     "service_worker": "background.js"
@@ -13,6 +13,21 @@
     "js": ["content.js"]
   }],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+       "16": "assets/red-circle-icon.png"
+    }
+ },
+ "icons": {
+    "16": "assets/red-circle-icon.png",
+    "48": "assets/red-circle-icon.png",
+    "128": "assets/red-circle-icon.png"
+ },
+ "web_accessible_resources": [
+  {
+      "resources": ["assets/green-circle-icon.png", "assets/red-circle-icon.png"],
+      "matches": ["<all_urls>"]
   }
+]
+
 }

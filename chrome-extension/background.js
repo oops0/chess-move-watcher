@@ -1,30 +1,30 @@
-// This is for when the extension is installed or updated.
-chrome.runtime.onInstalled.addListener((details) => {
-    cleanupObserversOnAllTabs();
+let isObserving = false;
 
-    // Additional code you might have for initialization on install/update...
-});
-
-// This is for when Chrome starts up (and when the extension is reloaded).
-chrome.runtime.onStartup.addListener(() => {
-    cleanupObserversOnAllTabs();
-});
-
-function cleanupObserversOnAllTabs() {
-    // Send a message to content scripts to cleanup.
-    chrome.tabs.query({url: "https://lichess.org/*"}, (tabs) => {
-        for (let tab of tabs) {
-            try {
-                chrome.tabs.sendMessage(tab.id, {command: "cleanupObservers"}, (response) => {
-                    if (chrome.runtime.lastError) {
-                        console.error(chrome.runtime.lastError.message);
-                    } else {
-                        // Handle the response, if needed.
-                    }
-                });
-            } catch (error) {
-                console.error("Failed sending message to tab:", error);
-            }
-        }
-    });
+function updateIcon() {
+    const iconPath = isObserving ? "assets/green-circle-icon.png" : "assets/red-circle-icon.png";
+    chrome.action.setIcon({ path: {16: iconPath} });    
 }
+
+// Fetch the initial state from storage when the background script starts
+chrome.storage.local.get("isObserving", function(data) {
+    isObserving = data.isObserving || false;
+    updateIcon(); // Set the initial icon based on fetched state
+});
+
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+    if (message.action === "toggleObservation") {
+        isObserving = !isObserving; // Toggle the observation state
+        
+        // Save the new observation state to storage
+        chrome.storage.local.set({ isObserving: isObserving });
+
+        // Update the icon
+        updateIcon();
+
+        // Send the updated state back to the popup script
+        sendResponse({ isObserving: isObserving });
+        
+    } else if (message.action === "getObservationState") {
+        sendResponse({ isObserving: isObserving });
+    }
+});
