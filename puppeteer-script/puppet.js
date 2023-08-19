@@ -1,51 +1,46 @@
 const puppeteer = require('puppeteer');
-const io = require('socket.io-client');
-const socket = io('http://localhost:3000');
+const WebSocket = require('ws');
 
-let page;
-let lastKnownColor = 'white';  // initialize with default
+// Function to set the value of the PGN textarea and press "Enter"
+async function pastePGNAndPressEnter(page, pgnString) {
+    const PGN_INPUT_SELECTOR = '#main-wrap > main > div.analyse__underboard > div > div.pgn > div > textarea';
 
-async function startBrowser() {
-    const browser = await puppeteer.launch({ headless: false });
-    page = await browser.newPage();
-    await page.goto('https://lichess.org/analysis/standard');
-    await page.keyboard.press('L');
-
-    // Listen to PGN updates
-    socket.on('pgn_update', async (data) => {
-        const { pgn, color } = data;
-        console.log('Received PGN update:', pgn);
-
-        if (color !== lastKnownColor) {
-            if (color === 'black') {
-                await page.keyboard.press('F');
-            }
-            lastKnownColor = color;
+    // Set the value of the textarea to the PGN string
+    await page.evaluate((selector, value) => {
+        const textarea = document.querySelector(selector);
+        if (textarea) {
+            textarea.value = value;
         }
+    }, PGN_INPUT_SELECTOR, pgnString);
 
-        await updatePGNInAnalysis(page, pgn);
+    // Now focus on the textarea and press "Enter"
+    await page.focus(PGN_INPUT_SELECTOR);
+    await page.keyboard.press('Enter');
+}
+
+(async () => {
+    const browser = await puppeteer.launch({ headless: false });
+    const page = await browser.newPage();
+    
+    await page.goto('https://lichess.org/analysis');
+    await page.waitForSelector('#main-wrap');
+    
+    await page.keyboard.press('L');
+    
+    const ws = new WebSocket('ws://localhost:3000');
+
+    ws.on('message', async (message) => {
+        const data = JSON.parse(message);
+    
+        if (data.action === "flipBoard") {
+            await page.evaluate(() => {
+                document.activeElement.blur();  // This will remove focus from the currently focused element
+            });
+            await page.keyboard.press('F');        // Press the "F" key.
+        } else if (data.pgn) {  // Ensure the message has a PGN before processing
+            const currentPGN = data.pgn;
+            await pastePGNAndPressEnter(page, currentPGN); // Use the new function here
+        }
     });
-}
 
-async function updatePGNInAnalysis(page, pgn) {
-    try {
-        const selector = '#main-wrap > main > div.analyse__underboard > div > div.pgn > div > textarea';
-
-        // Wait for the PGN textarea to appear
-        await page.waitForSelector(selector, { visible: true });
-
-        // Set the PGN value instantly
-        await page.evaluate((selector, pgn) => {
-            document.querySelector(selector).value = pgn;
-        }, selector, pgn);
-
-        // Press Enter to update the analysis board
-        await page.focus(selector);
-        await page.keyboard.press('Enter');
-
-    } catch (error) {
-        console.error('Error while trying to update PGN:', error);
-    }
-}
-
-startBrowser();
+})();

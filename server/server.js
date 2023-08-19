@@ -1,34 +1,50 @@
 const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
 const bodyParser = require('body-parser');
+const WebSocket = require('ws');
+const http = require('http');
 const cors = require('cors');
-
 const app = express();
+const PORT = 3000;
 
-app.use(cors());
-app.use(bodyParser.json());
-
+// Create an HTTP server
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: "*"
-    }
+
+// Attach the WebSocket server to the HTTP server
+const wss = new WebSocket.Server({ server });
+
+app.use(bodyParser.json());
+app.use(cors());
+
+wss.on('connection', (ws) => {
+    console.log('Client connected');
+    // You might want to keep track of connected clients to broadcast to them later
 });
 
 app.post('/pgn', (req, res) => {
-    const pgn = req.body.pgn;
-    const color = req.body.color || 'white';  // default to 'white' if no color provided
-    console.log('Received PGN:', pgn);
-    console.log('Player Color:', color);
+    const pgnData = req.body.pgn;
+    console.log(`Received PGN: ${pgnData}`);
 
-    // Emit the new PGN and color to any connected clients
-    io.emit('pgn_update', { pgn, color });
+    // Broadcast the new PGN to all connected WebSocket clients
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ pgn: pgnData }));  // Use pgnData, not newPGN
+        }
+    });
 
-    res.json({ status: 'success', message: 'PGN received' });
+    res.json({status: "Received", data: pgnData});
 });
 
-const PORT = 3000;
+app.post('/flip', (req, res) => {
+    // Broadcast the flip command to all connected WebSocket clients
+    wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ action: "flipBoard" }));
+        }
+    });
+    res.json({status: "Flip command received"});
+});
+
+
 server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });

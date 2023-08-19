@@ -1,15 +1,19 @@
 {
     "manifest_version": 3,
-    "name": "Chess Move Watcher",
+    "name": "Lichess Observer",
     "version": "1.0",
-    "description": "Watches moves in a chess game and sends them to a local server.",
-    "permissions": ["activeTab", "storage"],
-    "host_permissions": ["http://localhost:3000/"],
+    "description": "Extension to observe moves on Lichess and send them to a local server",
+    "permissions": ["activeTab"],
+    "host_permissions": ["http://localhost/*"],
     "background": {
-        "service_worker": "background.js"
+      "service_worker": "background.js"
     },
     "content_scripts": [{
-        "matches": ["*://lichess.org/*"],
-        "js": ["content.js"]
-    }]
-}
+      "matches": ["https://lichess.org/*"],
+      "js": ["content.js"]
+    }],
+    "action": {
+      "default_popup": "popup.html"
+    }
+  }
+  
