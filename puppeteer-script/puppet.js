@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const WebSocket = require('ws');
+let flipPending = false;
 
 // Function to set the value of the PGN textarea and press "Enter"
 async function pastePGNAndPressEnter(page, pgnString) {
@@ -16,6 +17,9 @@ async function pastePGNAndPressEnter(page, pgnString) {
     // Now focus on the textarea and press "Enter"
     await page.focus(PGN_INPUT_SELECTOR);
     await page.keyboard.press('Enter');
+    await page.evaluate(() => {
+        window.scrollTo(0, 0);
+    });    
 }
 
 (async () => {
@@ -24,9 +28,8 @@ async function pastePGNAndPressEnter(page, pgnString) {
     
     await page.goto('https://lichess.org/analysis');
     await page.waitForSelector('#main-wrap');
-    
-    await page.keyboard.press('L');
-    
+    await page.keyboard.press('L');    
+
     const ws = new WebSocket('ws://localhost:3000');
 
     ws.on('message', async (message) => {
@@ -34,13 +37,29 @@ async function pastePGNAndPressEnter(page, pgnString) {
     
         if (data.action === "flipBoard") {
             await page.evaluate(() => {
-                document.activeElement.blur();  // This will remove focus from the currently focused element
+                document.activeElement.blur();  // Remove focus from the currently focused element
             });
-            await page.keyboard.press('F');        // Press the "F" key.
-        } else if (data.pgn) {  // Ensure the message has a PGN before processing
+            await page.keyboard.press('F');        // Flip the board with F
+            flipPending = true;  // Set the flip flag to true after flipping
+            return;
+        } 
+    
+        if (data.pgn) {
             const currentPGN = data.pgn;
-            await pastePGNAndPressEnter(page, currentPGN); // Use the new function here
+            await pastePGNAndPressEnter(page, currentPGN); 
+            
+            // Check if a flip is pending after pasting the PGN
+            if (flipPending) {
+                await page.evaluate(() => {
+                    document.activeElement.blur();  // Remove focus from the currently focused element
+                });
+                await page.keyboard.press('F');        // Flip the board with F
+                flipPending = false;  // Reset the flip flag
+            }
         }
     });
+    
+    
+    
 
 })();

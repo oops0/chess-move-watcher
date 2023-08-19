@@ -1,35 +1,58 @@
 let mainObserver = null;
+let bodyObserver = null;
 let lastSentPGN = "";
 
 console.log("content script loaded");
 
-
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
-    console.log("Message received:", message.action);  // Add this line
+    console.log("Message received:", message.action);
+
     if (message.action === "startObservation") {
         if (!mainObserver) {
             initializeObservers();
         }
         sendResponse({status: "Observing"});
-    } 
-
-    if (message.action === "flipBoard") {
-        fetch('http://localhost:3000/flip', { method: 'POST' }) // Choose an endpoint for the flip command
+    } else if (message.action === "flipBoard") {
+        fetch('http://localhost:3000/flip', { method: 'POST' })
             .then(() => console.log('Sent flip command to server.'))
             .catch(error => console.error(`Error sending flip command to server: ${error}`));
+    } else if (message.command === "cleanupObservers") {
+        if (mainObserver) {
+            mainObserver.disconnect();
+            mainObserver = null;
+        }
+        if (bodyObserver) {
+            bodyObserver.disconnect();
+            bodyObserver = null;
+        }
     }
-
     // ... rest of the message listeners ...
 });
 
-// Handle detected mutations
+
+const checkForMoveList = () => {
+    return document.querySelector('#main-wrap > main > div.round__app.variant-standard > rm6 > l4x') || 
+           document.querySelector('#main-wrap > main > div.round__app.variant-standard > rm6 > div.col1-moves > l4x');
+};
+
+const handleBodyChange = (mutationsList, observer) => {
+    const moveListElement = checkForMoveList();
+    if (moveListElement) {
+        console.log('Move list detected.');
+        observer.disconnect(); // Disconnect from observing the entire body once the move list is found.
+        
+        mainObserver = new MutationObserver(handleMoveListChange);
+        mainObserver.observe(moveListElement, { childList: true, subtree: true });
+    }
+};
+
 const handleMoveListChange = (mutationsList) => {
     for (let mutation of mutationsList) {
         if (mutation.type === 'childList') {
             console.log('Mutation detected in the move list.');
 
             // Get the move list element, first trying the larger window selector, then the small one
-            const moveListElement = document.querySelector('#main-wrap > main > div.round__app.variant-standard > rm6 > l4x') || document.querySelector('#main-wrap > main > div.round__app.variant-standard > rm6 > div.col1-moves > l4x');
+            const moveListElement = checkForMoveList();
 
             // Ensure the element was found
             if (!moveListElement) {
@@ -65,8 +88,6 @@ const handleMoveListChange = (mutationsList) => {
     }
 };
 
-
-// Function to send PGN to server
 const sendPGNToServer = (pgn) => {
     fetch('http://localhost:3000/pgn', {
         method: 'POST',
@@ -85,20 +106,15 @@ const sendPGNToServer = (pgn) => {
 };
 
 const initializeObservers = () => {
-    // Try to select the "small" move list first.
-    let moveList = document.querySelector('#main-wrap > main > div.round__app.variant-standard > rm6 > div.col1-moves > l4x');
+    // Initially, set up an observer on the entire document to look for the appearance of the move list.
+    bodyObserver = new MutationObserver(handleBodyChange);
+    bodyObserver.observe(document.body, { childList: true, subtree: true });
 
-    // If not found, try the "big" move list.
-    if (!moveList) {
-        moveList = document.querySelector('#main-wrap > main > div.round__app.variant-standard > rm6 > l4x');
-    }
-
-    if (moveList) {
+    // If the move list is already there, set up the main observer immediately.
+    const existingMoveListElement = checkForMoveList();
+    if (existingMoveListElement) {
         mainObserver = new MutationObserver(handleMoveListChange);
-        mainObserver.observe(moveList, { childList: true, subtree: true });
-    } else {
-        console.log("Could not find move list element to observe.");
+        mainObserver.observe(existingMoveListElement, { childList: true, subtree: true });
+        bodyObserver.disconnect();
     }
 };
-
-
