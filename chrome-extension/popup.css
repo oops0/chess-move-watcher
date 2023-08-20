@@ -1,5 +1,20 @@
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;  /* Distributes the space around the items */
+    align-items: center;
+    padding: 0;  /* Adds some space around the edges to avoid items touching the border */
+}
+
 footer {
     display: flex;
     align-items: center;
-    padding: 5px;
+}
+
+#statusIcon {
+    margin-right: 5px;
+}
+
+button {
+    margin: 5px;  /* This gives space between the buttons if they are stacked */
 }

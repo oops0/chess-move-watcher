@@ -14,6 +14,9 @@ const wss = new WebSocket.Server({ server });
 
 app.use(bodyParser.json());
 app.use(cors());
+app.get('/ping', (req, res) => {
+    res.json({status: "Server Active"});
+});
 
 wss.on('connection', (ws) => {
     console.log('Client connected');

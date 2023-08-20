@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html>
-<link rel="stylesheet" href="popup.css">
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lichess Observer</title>
+    <link rel="stylesheet" href="popup.css">
     <style>
         button {
             margin: 10px;
@@ -12,10 +14,12 @@
 <body>
     <button id="startObservation">Start</button>
     <button id="flip-board">Flip</button>
+
+    <footer>
+        <img id="statusIcon" src="assets/red-circle-icon.png" alt="Status Indicator" width="8">
+        <span id="statusText">Inactive...</span>
+    </footer>
+
     <script src="popup.js"></script>
 </body>
-<footer>
-    <img id="statusIcon" src="assets/red-circle-icon.png" alt="Status Indicator" width="20">
-    <span id="statusText">Inactive</span>
-</footer>
 </html>

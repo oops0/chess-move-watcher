@@ -13,21 +13,11 @@
     "js": ["content.js"]
   }],
   "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-       "16": "assets/red-circle-icon.png"
-    }
- },
- "icons": {
-    "16": "assets/red-circle-icon.png",
-    "48": "assets/red-circle-icon.png",
-    "128": "assets/red-circle-icon.png"
- },
- "web_accessible_resources": [
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
   {
       "resources": ["assets/green-circle-icon.png", "assets/red-circle-icon.png"],
       "matches": ["<all_urls>"]
-  }
-]
-
+  }]
 }
